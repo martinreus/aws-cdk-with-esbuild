@@ -10,9 +10,7 @@
       "name": "Debug local file",
       "runtimeArgs": ["-r", "ts-node/register"],
       "args": ["${relativeFile}"],
-      "env": {
-        "AWS_REGION": "eu-central-1"
-      }
+      "env": {}
     }
   ]
 }

@@ -1,3 +1,6 @@
+import { v4 } from "uuid";
+
 export const test = () => {
-  console.log("hello world");
+  const random = v4();
+  console.log(`hello world ${random}`);
 };
