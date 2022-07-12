@@ -1,19 +1,18 @@
-import { Response, S3 } from "aws-sdk";
+import { DynamoDB } from "aws-sdk";
 import { v4 } from "uuid";
 
+const db = new DynamoDB.DocumentClient();
+
 export const test = async (event: any, ctx: any) => {
-  const random = "";
-  console.log(event);
-
-  const s3B = new S3();
-
-  console.log(`creating bucket... ${random}`);
-
-  const created = await s3B
-    .createBucket({
-      Bucket: v4(),
+  const putRslt = await db
+    .put({
+      Item: {
+        id: v4(),
+        name: `a rand name ${v4()}`,
+      },
+      TableName: "testTable",
     })
     .promise();
 
-  console.log("Bucket created: " + JSON.stringify(created));
+  console.log("persisted? " + putRslt.$response);
 };
