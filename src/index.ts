@@ -24,3 +24,8 @@ export const secondHandler = async (event: Obj, ctx: any) => {
   console.log(`second handler: ${JSON.stringify(event)}`);
   return event.existingItem;
 };
+
+export const finalHandler = async (event: Obj, ctx: any) => {
+  console.log(`final handler: ${JSON.stringify(event)}`);
+  return;
+};
