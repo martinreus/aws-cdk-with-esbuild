@@ -1,18 +1,28 @@
 import { DynamoDB } from "aws-sdk";
-import { v4 } from "uuid";
+
+import * as _ from "lodash";
+import { Record } from "aws-sdk/clients/dynamodbstreams";
 
 const db = new DynamoDB.DocumentClient();
 
-export const test = async (event: any, ctx: any) => {
-  const putRslt = await db
-    .put({
-      Item: {
-        id: v4(),
-        name: `a rand name ${v4()}`,
-      },
-      TableName: "testTable",
-    })
-    .promise();
+interface Event {
+  Records: Record[];
+}
 
-  console.log("persisted? " + putRslt.$response);
+export const handler = async (event: Event, ctx: any) => {
+  if (!event.Records) {
+    return;
+  }
+
+  const items = event.Records.filter(
+    (record) =>
+      !!record &&
+      record.eventName != "REMOVE" &&
+      !!record.dynamodb &&
+      !!record.dynamodb.NewImage
+  )
+    .map((record) => record.dynamodb!.NewImage!)
+    .map((record) => DynamoDB.Converter.unmarshall(record));
+
+  console.log(JSON.stringify(items));
 };
