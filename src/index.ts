@@ -1,18 +1,26 @@
 import { DynamoDB } from "aws-sdk";
-import { v4 } from "uuid";
 
 const db = new DynamoDB.DocumentClient();
 
-export const test = async (event: any, ctx: any) => {
-  const putRslt = await db
-    .put({
-      Item: {
-        id: v4(),
-        name: `a rand name ${v4()}`,
-      },
-      TableName: "testTable",
-    })
-    .promise();
+interface Obj {
+  existingItem: string;
+}
 
-  console.log("persisted? " + putRslt.$response);
+export const firstHandler = async (event: any, ctx: any) => {
+  console.log("first handler entered");
+  return [
+    { existingItem: "1" },
+    { existingItem: "2" },
+    { existingItem: "3" },
+    { existingItem: "4" },
+    { existingItem: "5" },
+    { existingItem: "6" },
+    { existingItem: "7" },
+    { existingItem: "8" },
+  ];
+};
+
+export const secondHandler = async (event: Obj, ctx: any) => {
+  console.log(`second handler: ${JSON.stringify(event)}`);
+  return event.existingItem;
 };
