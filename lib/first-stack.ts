@@ -10,10 +10,12 @@ import {
   Succeed,
   Pass,
   Parallel,
+  JsonPath,
 } from "aws-cdk-lib/aws-stepfunctions";
 import { LambdaInvoke } from "aws-cdk-lib/aws-stepfunctions-tasks";
 import { Construct } from "constructs";
 import * as path from "path";
+import { finalHandler } from "../src";
 
 export class FirstStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -21,47 +23,54 @@ export class FirstStack extends Stack {
 
     const fn = new NodejsFunction(this, "chusme", {
       entry: path.join(__dirname, "..", "src", "index.ts"),
-      handler: "firstHandler",
+      handler: "dateGeneratorHandler",
       runtime: Runtime.NODEJS_16_X,
     });
-
     const fn2 = new NodejsFunction(this, "chusme2", {
       entry: path.join(__dirname, "..", "src", "index.ts"),
-      handler: "secondHandler",
+      handler: "producerHandler",
       runtime: Runtime.NODEJS_16_X,
     });
-
     const fn3 = new NodejsFunction(this, "chusme3", {
+      entry: path.join(__dirname, "..", "src", "index.ts"),
+      handler: "processorHandler",
+      runtime: Runtime.NODEJS_16_X,
+    });
+    const fn4 = new NodejsFunction(this, "chusme4", {
       entry: path.join(__dirname, "..", "src", "index.ts"),
       handler: "finalHandler",
       runtime: Runtime.NODEJS_16_X,
     });
 
-    const submitJob = new LambdaInvoke(this, "Submit Job", {
+    const generateDate = new LambdaInvoke(this, "SubmitDate", {
       lambdaFunction: fn,
       outputPath: "$.Payload",
     });
-
-    const process = new LambdaInvoke(this, "Process", {
+    const producer = new LambdaInvoke(this, "Produce", {
       lambdaFunction: fn2,
       outputPath: "$.Payload",
     });
-
-    const finalLambda = new LambdaInvoke(this, "FinishLambda", {
+    const processor = new LambdaInvoke(this, "Process", {
       lambdaFunction: fn3,
       outputPath: "$.Payload",
     });
-
-    // const parallel = new Parallel(this, "parallel execution", {
-    //   outputPath: "$.Payload",
-    // });
+    const finish = new LambdaInvoke(this, "Finish", {
+      lambdaFunction: fn4,
+      outputPath: "$.Payload",
+    });
 
     const map = new Map(this, "map to parallel execution", {
       maxConcurrency: 2,
     });
-    map.iterator(process);
+    map.iterator(processor);
 
-    const definition = submitJob.next(map).next(finalLambda);
+    const passGeneratedDate = new Pass(this, "pass along");
+    const parallel = new Parallel(this, "parallel execution").branch(
+      passGeneratedDate,
+      producer.next(map)
+    );
+
+    const definition = generateDate.next(parallel).next(finish);
 
     new StateMachine(this, "StateMachine", {
       definition,

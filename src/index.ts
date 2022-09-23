@@ -2,30 +2,44 @@ import { DynamoDB } from "aws-sdk";
 
 const db = new DynamoDB.DocumentClient();
 
-interface Obj {
-  existingItem: string;
+interface Item {
+  item: string;
+  jobInfo: JobInfo;
 }
 
-export const firstHandler = async (event: any, ctx: any) => {
+interface JobInfo {
+  date: string;
+}
+
+export const dateGeneratorHandler = async (
+  event: any,
+  ctx: any
+): Promise<JobInfo> => {
   console.log("first handler entered");
+  return { date: new Date().toISOString() };
+};
+
+export const producerHandler = async (
+  jobInfo: JobInfo,
+  ctx: any
+): Promise<Item[]> => {
+  console.log(`producer handler: ${JSON.stringify(jobInfo)}`);
   return [
-    { existingItem: "1" },
-    { existingItem: "2" },
-    { existingItem: "3" },
-    { existingItem: "4" },
-    { existingItem: "5" },
-    { existingItem: "6" },
-    { existingItem: "7" },
-    { existingItem: "8" },
+    { item: "1", jobInfo },
+    { item: "2", jobInfo },
+    { item: "3", jobInfo },
+    { item: "4", jobInfo },
+    { item: "5", jobInfo },
+    { item: "6", jobInfo },
   ];
 };
 
-export const secondHandler = async (event: Obj, ctx: any) => {
-  console.log(`second handler: ${JSON.stringify(event)}`);
-  return event.existingItem;
+export const processorHandler = async (item: Item, ctx: any) => {
+  console.log(`processor handler: ${JSON.stringify(item)}`);
+  return;
 };
 
-export const finalHandler = async (event: Obj, ctx: any) => {
-  console.log(`final handler: ${JSON.stringify(event)}`);
+export const finalHandler = async (jobInfo: JobInfo, ctx: any) => {
+  console.log(`final handler: ${JSON.stringify(jobInfo)}`);
   return;
 };
