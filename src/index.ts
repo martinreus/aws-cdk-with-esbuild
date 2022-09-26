@@ -39,7 +39,15 @@ export const processorHandler = async (item: Item, ctx: any) => {
   return;
 };
 
-export const finalHandler = async (jobInfo: JobInfo, ctx: any) => {
+// final handler will receive the result of parallel process, so it contains the result of all
+// branches in one array. One of them is the JobInfo object, the other is an array containing
+// all the results of all the processorHandler outputs
+export const finalHandler = async (rslt: any[], ctx: any) => {
+  //rslt will contain one array and one JobInfo object
+  const jobInfo: JobInfo | undefined = rslt.find(
+    (entry) => !!(entry as JobInfo).date
+  );
+
   console.log(`final handler: ${JSON.stringify(jobInfo)}`);
   return;
 };
