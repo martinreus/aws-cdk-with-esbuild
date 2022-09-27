@@ -81,7 +81,7 @@ export class FirstStack extends Stack {
 
     // flow control state machine
     const controlFn = new NodejsFunction(this, "controlfn", {
-      entry: path.join(__dirname, "..", "src", "index.ts"),
+      entry: path.join(__dirname, "..", "src", "flow.ts"),
       handler: "consumer",
       runtime: Runtime.NODEJS_16_X,
     });
