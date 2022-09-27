@@ -26,3 +26,7 @@ export const handler = async (event: Event, ctx: any) => {
 
   console.log(JSON.stringify(items));
 };
+
+export const handler2 = async (event: Event, ctx: any) => {
+  console.log(`handler2: ${JSON.stringify(event)}`);
+};

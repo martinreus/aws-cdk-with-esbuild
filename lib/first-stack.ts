@@ -44,6 +44,7 @@ export class FirstStack extends Stack {
     // const stream = new kinesis.Stream(this, "MyStream");
 
     const deadLetterQueue = new sqs.Queue(this, "deadLetterQueue");
+    const deadLetterQueue2 = new sqs.Queue(this, "deadLetterQueue2");
     // data store:
     const testTable = new Table(this, "Companies", {
       tableName: "companies",
@@ -56,23 +57,20 @@ export class FirstStack extends Stack {
     });
 
     const fn = new NodejsFunction(this, "chusme", {
-      functionName: "chusme",
+      functionName: "handler",
       logRetention: RetentionDays.ONE_DAY,
       entry: path.join(__dirname, "..", "src", "index.ts"),
       handler: "handler",
       runtime: Runtime.NODEJS_16_X,
     });
-    testTable.grantReadWriteData(fn);
 
-    // --------- using kinesis -------------------
-    // const es = new KinesisEventSource(stream, {
-    //   startingPosition: StartingPosition.TRIM_HORIZON,
-    //   batchSize: 10,
-    //   bisectBatchOnError: true,
-    //   onFailure: new SqsDlq(deadLetterQueue),
-    //   retryAttempts: 10,
-    // });
-    // fn.addEventSource(es);
+    const fn2 = new NodejsFunction(this, "chusme2", {
+      functionName: "handler2",
+      logRetention: RetentionDays.ONE_DAY,
+      entry: path.join(__dirname, "..", "src", "index.ts"),
+      handler: "handler2",
+      runtime: Runtime.NODEJS_16_X,
+    });
 
     // ---------- using dynamodb events
     fn.addEventSource(
@@ -81,6 +79,16 @@ export class FirstStack extends Stack {
         batchSize: 10,
         bisectBatchOnError: true,
         onFailure: new SqsDlq(deadLetterQueue),
+        retryAttempts: 10,
+      })
+    );
+
+    fn2.addEventSource(
+      new DynamoEventSource(testTable, {
+        startingPosition: StartingPosition.TRIM_HORIZON,
+        batchSize: 10,
+        bisectBatchOnError: true,
+        onFailure: new SqsDlq(deadLetterQueue2),
         retryAttempts: 10,
       })
     );
