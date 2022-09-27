@@ -11,6 +11,8 @@ import {
   Pass,
   Parallel,
   JsonPath,
+  Choice,
+  Condition,
 } from "aws-cdk-lib/aws-stepfunctions";
 import { LambdaInvoke } from "aws-cdk-lib/aws-stepfunctions-tasks";
 import { Construct } from "constructs";
@@ -75,6 +77,29 @@ export class FirstStack extends Stack {
     new StateMachine(this, "StateMachine", {
       definition,
       timeout: Duration.minutes(5),
+    });
+
+    // flow control state machine
+    const controlFn = new NodejsFunction(this, "controlfn", {
+      entry: path.join(__dirname, "..", "src", "index.ts"),
+      handler: "consumer",
+      runtime: Runtime.NODEJS_16_X,
+    });
+
+    const controlFnInvoke = new LambdaInvoke(this, "controlFnInvoke", {
+      lambdaFunction: controlFn,
+      outputPath: "$.Payload",
+    });
+
+    const controlFlow = controlFnInvoke.next(
+      new Choice(this, "hasNextId")
+        .when(Condition.isPresent("$.nextId"), controlFnInvoke)
+        .otherwise(new Succeed(this, "finished"))
+    );
+
+    new StateMachine(this, "ControlFn", {
+      definition: controlFlow,
+      timeout: Duration.minutes(2),
     });
   }
 }

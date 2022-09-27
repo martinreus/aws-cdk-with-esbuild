@@ -51,3 +51,15 @@ export const finalHandler = async (rslt: any[], ctx: any) => {
   console.log(`final handler: ${JSON.stringify(jobInfo)}`);
   return;
 };
+
+// if loops
+export const consumer = (event: { id: number }, context: any) => {
+  console.log(`received ${JSON.stringify(event)}`);
+  if (!event) {
+    return { nextId: 1 };
+  }
+  if (event.id < 10) {
+    return { nextId: event.id };
+  }
+  return {};
+};
