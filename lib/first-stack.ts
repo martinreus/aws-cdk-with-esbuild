@@ -29,16 +29,19 @@ import {
 // });
 
 export class FirstStack extends Stack {
-  constructor(scope: Construct) {
-    super(scope, "integ-restapi-import-RootStack");
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
 
     const restApi = new RestApi(this, "RestApi", {
-      defaultCorsPreflightOptions: {
-        allowOrigins: Cors.ALL_ORIGINS,
-        allowMethods: Cors.ALL_METHODS,
-        allowHeaders: ["*"],
-        allowCredentials: true,
-      },
+      // defaultCorsPreflightOptions: {
+      //   allowOrigins: Cors.ALL_ORIGINS,
+      //   allowMethods: Cors.ALL_METHODS,
+      //   allowHeaders: ["*"],
+      //   allowCredentials: true,
+      // },
+      // deployOptions: {
+      //   stageName: "new-one",
+      // },
       deploy: false,
     });
 
@@ -48,19 +51,21 @@ export class FirstStack extends Stack {
       runtime: Runtime.NODEJS_16_X,
     });
 
+    restApi.root.addCorsPreflight({
+      allowOrigins: Cors.ALL_ORIGINS,
+      allowMethods: Cors.ALL_METHODS,
+      allowHeaders: ["*"],
+      allowCredentials: true,
+    });
     restApi.root.addMethod("POST", new LambdaIntegration(fn));
 
     const petsStack = new PetsStack(this, {
       restApiId: restApi.restApiId,
       rootResourceId: restApi.restApiRootResourceId,
     });
-    const booksStack = new BooksStack(this, {
-      restApiId: restApi.restApiId,
-      rootResourceId: restApi.restApiRootResourceId,
-    });
     new DeployStack(this, {
       restApiId: restApi.restApiId,
-      methods: petsStack.methods.concat(booksStack.methods),
+      methods: petsStack.methods,
     });
 
     new CfnOutput(this, "PetsURL", {
@@ -90,56 +95,34 @@ class PetsStack extends NestedStack {
       rootResourceId: props.rootResourceId,
     });
 
-    const method = api.root.addResource("pets").addMethod(
-      "GET",
-      new MockIntegration({
-        integrationResponses: [
-          {
-            statusCode: "200",
-          },
-        ],
-        passthroughBehavior: PassthroughBehavior.NEVER,
-        requestTemplates: {
-          "application/json": '{ "statusCode": 200 }',
+    const method = api.root
+      .resourceForPath("webhook")
+      .addResource("pets", {
+        defaultCorsPreflightOptions: {
+          allowOrigins: Cors.ALL_ORIGINS,
+          allowMethods: Cors.ALL_METHODS,
+          allowHeaders: ["*"],
+          allowCredentials: true,
         },
-      }),
-      {
-        methodResponses: [{ statusCode: "200" }],
-      }
-    );
+      })
+      .addMethod(
+        "GET",
+        new MockIntegration({
+          integrationResponses: [
+            {
+              statusCode: "200",
+            },
+          ],
+          passthroughBehavior: PassthroughBehavior.NEVER,
 
-    this.methods.push(method);
-  }
-}
-
-class BooksStack extends NestedStack {
-  public readonly methods: Method[] = [];
-
-  constructor(scope: Construct, props: ResourceNestedStackProps) {
-    super(scope, "integ-restapi-import-BooksStack", props);
-
-    const api = RestApi.fromRestApiAttributes(this, "RestApi", {
-      restApiId: props.restApiId,
-      rootResourceId: props.rootResourceId,
-    });
-
-    const method = api.root.addResource("books").addMethod(
-      "GET",
-      new MockIntegration({
-        integrationResponses: [
-          {
-            statusCode: "200",
+          requestTemplates: {
+            "application/json": '{ "statusCode": 200 }',
           },
-        ],
-        passthroughBehavior: PassthroughBehavior.NEVER,
-        requestTemplates: {
-          "application/json": '{ "statusCode": 200 }',
-        },
-      }),
-      {
-        methodResponses: [{ statusCode: "200" }],
-      }
-    );
+        }),
+        {
+          methodResponses: [{ statusCode: "200" }],
+        }
+      );
 
     this.methods.push(method);
   }
@@ -163,6 +146,6 @@ class DeployStack extends NestedStack {
         deployment.node.addDependency(method);
       }
     }
-    new Stage(this, "Stage", { deployment });
+    new Stage(this, "Stage", { deployment, stageName: "with-deploy-stack" });
   }
 }
