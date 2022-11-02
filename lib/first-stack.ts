@@ -12,15 +12,19 @@ import {
 } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import {
+  AccessLogFormat,
   Cors,
   Deployment,
   LambdaIntegration,
+  LogGroupLogDestination,
   Method,
+  MethodLoggingLevel,
   MockIntegration,
   PassthroughBehavior,
   RestApi,
   Stage,
 } from "aws-cdk-lib/aws-apigateway";
+import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 
 // const fn = new NodejsFunction(this, "chusme", {
 //   entry: path.join(__dirname, "..", "src", "index.ts"),
@@ -42,7 +46,20 @@ export class FirstStack extends Stack {
       // deployOptions: {
       //   stageName: "new-one",
       // },
+
+      restApiName: "RestApi",
+      description: "Lalalal",
+      minimumCompressionSize: 0,
+      retainDeployments: true,
+      failOnWarnings: true,
+
       deploy: false,
+    });
+    restApi.root.addCorsPreflight({
+      allowOrigins: Cors.ALL_ORIGINS,
+      allowMethods: Cors.ALL_METHODS,
+      allowHeaders: ["*"],
+      allowCredentials: true,
     });
 
     const fn = new NodejsFunction(this, "chusme", {
@@ -51,20 +68,16 @@ export class FirstStack extends Stack {
       runtime: Runtime.NODEJS_16_X,
     });
 
-    restApi.root.addCorsPreflight({
-      allowOrigins: Cors.ALL_ORIGINS,
-      allowMethods: Cors.ALL_METHODS,
-      allowHeaders: ["*"],
-      allowCredentials: true,
-    });
     restApi.root.addMethod("POST", new LambdaIntegration(fn));
 
     const petsStack = new PetsStack(this, {
       restApiId: restApi.restApiId,
       rootResourceId: restApi.restApiRootResourceId,
     });
+
     new DeployStack(this, {
       restApiId: restApi.restApiId,
+      rootResourceId: restApi.restApiRootResourceId,
       methods: petsStack.methods,
     });
 
@@ -96,7 +109,7 @@ class PetsStack extends NestedStack {
     });
 
     const method = api.root
-      .resourceForPath("webhook")
+      // .resourceForPath("webhook")
       .addResource("pets", {
         defaultCorsPreflightOptions: {
           allowOrigins: Cors.ALL_ORIGINS,
@@ -130,6 +143,7 @@ class PetsStack extends NestedStack {
 
 interface DeployStackProps extends NestedStackProps {
   readonly restApiId: string;
+  readonly rootResourceId: string;
 
   readonly methods?: Method[];
 }
@@ -138,14 +152,32 @@ class DeployStack extends NestedStack {
   constructor(scope: Construct, props: DeployStackProps) {
     super(scope, "integ-restapi-import-DeployStack", props);
 
-    const deployment = new Deployment(this, "Deployment", {
-      api: RestApi.fromRestApiId(this, "RestApi", props.restApiId),
+    const api = RestApi.fromRestApiAttributes(this, "RestApi", {
+      restApiId: props.restApiId,
+      rootResourceId: props.rootResourceId,
     });
+
+    const deployment = new Deployment(this, "Deployment", { api });
+
     if (props.methods) {
       for (const method of props.methods) {
         deployment.node.addDependency(method);
       }
     }
-    new Stage(this, "Stage", { deployment, stageName: "with-deploy-stack" });
+
+    const logGroup = new LogGroup(scope, "REST-api-log-group", {
+      retention: RetentionDays.ONE_DAY,
+    });
+
+    new Stage(this, "restApiStage", {
+      deployment,
+      stageName: "with-deploy-stack",
+      loggingLevel: MethodLoggingLevel.INFO,
+      dataTraceEnabled: true,
+      tracingEnabled: true,
+      metricsEnabled: true,
+      accessLogDestination: new LogGroupLogDestination(logGroup),
+      accessLogFormat: AccessLogFormat.jsonWithStandardFields(),
+    });
   }
 }
