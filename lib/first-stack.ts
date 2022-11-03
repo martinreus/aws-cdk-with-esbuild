@@ -25,6 +25,7 @@ import {
   Stage,
 } from "aws-cdk-lib/aws-apigateway";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
+import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
 
 // const fn = new NodejsFunction(this, "chusme", {
 //   entry: path.join(__dirname, "..", "src", "index.ts"),
@@ -46,21 +47,20 @@ export class FirstStack extends Stack {
       // deployOptions: {
       //   stageName: "new-one",
       // },
+      deploy: false,
 
       restApiName: "RestApi",
       description: "Lalalal",
       minimumCompressionSize: 0,
       retainDeployments: true,
       failOnWarnings: true,
-
-      deploy: false,
     });
-    restApi.root.addCorsPreflight({
-      allowOrigins: Cors.ALL_ORIGINS,
-      allowMethods: Cors.ALL_METHODS,
-      allowHeaders: ["*"],
-      allowCredentials: true,
-    });
+    // restApi.root.addCorsPreflight({
+    //   allowOrigins: Cors.ALL_ORIGINS,
+    //   allowMethods: Cors.ALL_METHODS,
+    //   allowHeaders: ["*"],
+    //   allowCredentials: true,
+    // });
 
     const fn = new NodejsFunction(this, "chusme", {
       entry: path.join(__dirname, "..", "src", "index.ts"),
@@ -70,15 +70,15 @@ export class FirstStack extends Stack {
 
     restApi.root.addMethod("POST", new LambdaIntegration(fn));
 
-    const petsStack = new PetsStack(this, {
-      restApiId: restApi.restApiId,
-      rootResourceId: restApi.restApiRootResourceId,
-    });
+    // const petsStack = new PetsStack(this, {
+    //   restApiId: restApi.restApiId,
+    //   rootResourceId: restApi.restApiRootResourceId,
+    // });
 
     new DeployStack(this, {
       restApiId: restApi.restApiId,
       rootResourceId: restApi.restApiRootResourceId,
-      methods: petsStack.methods,
+      // methods: petsStack.methods,
     });
 
     new CfnOutput(this, "PetsURL", {
