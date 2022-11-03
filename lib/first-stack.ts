@@ -24,7 +24,7 @@ import {
   RestApi,
   Stage,
 } from "aws-cdk-lib/aws-apigateway";
-import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
+import { LogGroup, LogRetention, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
 
 // const fn = new NodejsFunction(this, "chusme", {
@@ -33,26 +33,44 @@ import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
 //   runtime: Runtime.NODEJS_16_X,
 // });
 
+const defaultCorsPreflightOptions = {
+  allowOrigins: Cors.ALL_ORIGINS,
+  allowMethods: Cors.ALL_METHODS,
+  allowHeaders: ["*"],
+  allowCredentials: true,
+};
+
+const deployOpts = {
+  loggingLevel: MethodLoggingLevel.INFO,
+  dataTraceEnabled: true,
+  tracingEnabled: true,
+  metricsEnabled: true,
+  accessLogFormat: AccessLogFormat.jsonWithStandardFields(),
+};
+
 export class FirstStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
+    const lg = new LogGroup(this, "rest-api-log-group-main-stack", {
+      logGroupName: "rest-api-log-group-main-stack",
+      retention: RetentionDays.ONE_DAY,
+    });
+
     const restApi = new RestApi(this, "RestApi", {
-      // defaultCorsPreflightOptions: {
-      //   allowOrigins: Cors.ALL_ORIGINS,
-      //   allowMethods: Cors.ALL_METHODS,
-      //   allowHeaders: ["*"],
-      //   allowCredentials: true,
-      // },
-      // deployOptions: {
-      //   stageName: "new-one",
-      // },
-      deploy: false,
+      defaultCorsPreflightOptions,
+
+      deployOptions: {
+        stageName: "new",
+        accessLogDestination: new LogGroupLogDestination(lg),
+        ...deployOpts,
+      },
+      // deploy: false,
 
       restApiName: "RestApi",
       description: "Lalalal",
-      minimumCompressionSize: 0,
-      retainDeployments: true,
+      // minimumCompressionSize: 0,
+      // retainDeployments: true,
       failOnWarnings: true,
     });
     // restApi.root.addCorsPreflight({
@@ -75,11 +93,11 @@ export class FirstStack extends Stack {
     //   rootResourceId: restApi.restApiRootResourceId,
     // });
 
-    new DeployStack(this, {
-      restApiId: restApi.restApiId,
-      rootResourceId: restApi.restApiRootResourceId,
-      // methods: petsStack.methods,
-    });
+    // new DeployStack(this, {
+    //   restApiId: restApi.restApiId,
+    //   rootResourceId: restApi.restApiRootResourceId,
+    //   methods: petsStack.methods,
+    // });
 
     new CfnOutput(this, "PetsURL", {
       value: `https://${restApi.restApiId}.execute-api.${this.region}.amazonaws.com/prod/pets`,
@@ -110,14 +128,7 @@ class PetsStack extends NestedStack {
 
     const method = api.root
       // .resourceForPath("webhook")
-      .addResource("pets", {
-        defaultCorsPreflightOptions: {
-          allowOrigins: Cors.ALL_ORIGINS,
-          allowMethods: Cors.ALL_METHODS,
-          allowHeaders: ["*"],
-          allowCredentials: true,
-        },
-      })
+      .addResource("pets", { defaultCorsPreflightOptions })
       .addMethod(
         "GET",
         new MockIntegration({
@@ -165,19 +176,15 @@ class DeployStack extends NestedStack {
       }
     }
 
-    const logGroup = new LogGroup(scope, "REST-api-log-group", {
+    const lg = new LogGroup(scope, "nested-stack-log-group", {
       retention: RetentionDays.ONE_DAY,
     });
 
     new Stage(this, "restApiStage", {
       deployment,
       stageName: "with-deploy-stack",
-      loggingLevel: MethodLoggingLevel.INFO,
-      dataTraceEnabled: true,
-      tracingEnabled: true,
-      metricsEnabled: true,
-      accessLogDestination: new LogGroupLogDestination(logGroup),
-      accessLogFormat: AccessLogFormat.jsonWithStandardFields(),
+      accessLogDestination: new LogGroupLogDestination(lg),
+      ...deployOpts,
     });
   }
 }
