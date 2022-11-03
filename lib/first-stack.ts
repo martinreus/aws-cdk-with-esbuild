@@ -58,19 +58,19 @@ export class FirstStack extends Stack {
     });
 
     const restApi = new RestApi(this, "RestApi", {
-      defaultCorsPreflightOptions,
+      // defaultCorsPreflightOptions,
 
-      deployOptions: {
-        stageName: "new",
-        accessLogDestination: new LogGroupLogDestination(lg),
-        ...deployOpts,
-      },
-      // deploy: false,
+      // deployOptions: {
+      //   stageName: "new",
+      //   accessLogDestination: new LogGroupLogDestination(lg),
+      //   ...deployOpts,
+      // },
+      deploy: false,
 
       restApiName: "RestApi",
       description: "Lalalal",
-      // minimumCompressionSize: 0,
-      // retainDeployments: true,
+      minimumCompressionSize: 0,
+      retainDeployments: true,
       failOnWarnings: true,
     });
     // restApi.root.addCorsPreflight({
@@ -88,16 +88,16 @@ export class FirstStack extends Stack {
 
     restApi.root.addMethod("POST", new LambdaIntegration(fn));
 
-    // const petsStack = new PetsStack(this, {
-    //   restApiId: restApi.restApiId,
-    //   rootResourceId: restApi.restApiRootResourceId,
-    // });
+    const petsStack = new PetsStack(this, {
+      restApiId: restApi.restApiId,
+      rootResourceId: restApi.restApiRootResourceId,
+    });
 
-    // new DeployStack(this, {
-    //   restApiId: restApi.restApiId,
-    //   rootResourceId: restApi.restApiRootResourceId,
-    //   methods: petsStack.methods,
-    // });
+    new DeployStack(this, {
+      restApiId: restApi.restApiId,
+      rootResourceId: restApi.restApiRootResourceId,
+      methods: petsStack.methods,
+    });
 
     new CfnOutput(this, "PetsURL", {
       value: `https://${restApi.restApiId}.execute-api.${this.region}.amazonaws.com/prod/pets`,
