@@ -58,7 +58,7 @@ export class FirstStack extends Stack {
     });
 
     const restApi = new RestApi(this, "RestApi", {
-      // defaultCorsPreflightOptions,
+      defaultCorsPreflightOptions,
 
       // deployOptions: {
       //   stageName: "new",
@@ -86,7 +86,16 @@ export class FirstStack extends Stack {
       runtime: Runtime.NODEJS_16_X,
     });
 
-    restApi.root.addMethod("POST", new LambdaIntegration(fn));
+    const inMainMethod = restApi.root
+      .resourceForPath(
+        "inMain"
+        // , {
+        // defaultCorsPreflightOptions,
+        // }
+      )
+      .addMethod("POST", new LambdaIntegration(fn), {
+        apiKeyRequired: false,
+      });
 
     const petsStack = new PetsStack(this, {
       restApiId: restApi.restApiId,
@@ -96,7 +105,7 @@ export class FirstStack extends Stack {
     new DeployStack(this, {
       restApiId: restApi.restApiId,
       rootResourceId: restApi.restApiRootResourceId,
-      methods: petsStack.methods,
+      methods: petsStack.methods.concat(inMainMethod),
     });
 
     new CfnOutput(this, "PetsURL", {
