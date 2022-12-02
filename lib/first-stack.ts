@@ -14,6 +14,7 @@ import {
 } from "aws-cdk-lib/aws-apigateway";
 import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
+import { LambdaWithPreehook } from "./constructs/lambda-with-preehook";
 
 // const fn = new NodejsFunction(this, "chusme", {
 //   entry: path.join(__dirname, "..", "src", "index.ts"),
@@ -75,12 +76,34 @@ class BusinessLogicStack extends NestedStack {
   constructor(scope: Construct, id: string, props?: ResourceNestedStackProps) {
     super(scope, id, props);
 
-    const fn = new NodejsFunction(this, "chusme", {
-      entry: path.join(__dirname, "..", "src", "index.ts"),
-      handler: "test",
-      runtime: Runtime.NODEJS_16_X,
-      tracing: Tracing.ACTIVE,
-    });
+    // const fn = new NodejsFunction(this, "chusme", {
+    //   entry: path.join(__dirname, "..", "src", "index.ts"),
+    //   handler: "test",
+    //   runtime: Runtime.NODEJS_16_X,
+    //   tracing: Tracing.ACTIVE,
+    // });
+
+    const preHook = new LambdaWithPreehook(
+      this,
+      "business",
+      {
+        lambdaProps: {
+          entry: path.join(__dirname, "..", "src", "index.ts"),
+          handler: "test",
+          runtime: Runtime.NODEJS_16_X,
+          tracing: Tracing.ACTIVE,
+        },
+      },
+      {
+        lambdaProps: {
+          entry: path.join(__dirname, "..", "src", "index.ts"),
+          handler: "prehook",
+          runtime: Runtime.NODEJS_16_X,
+          tracing: Tracing.ACTIVE,
+        },
+      }
+    );
+    const fn = preHook.lambdaAlias;
 
     this.integration = new LambdaIntegration(fn);
   }
