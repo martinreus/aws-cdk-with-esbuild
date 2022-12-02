@@ -1,0 +1,26 @@
+type Query {
+  getIcpParameters: IcpParameters
+}
+
+# type Mutation {
+# }
+
+schema {
+  query: Query
+  # mutation: Mutation
+}
+
+# type Teste {
+#   id: ID!
+# }
+
+type IcpParameters {
+  industries: [ICPIndustry!]
+}
+
+type ICPIndustry {
+  id: ID!
+  description: String!
+  # child industries
+  industries: [ICPIndustry!]
+}
