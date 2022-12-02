@@ -1,8 +1,3 @@
-import { Duration, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
-import { AttributeType, BillingMode, Table } from "aws-cdk-lib/aws-dynamodb";
-import { Runtime } from "aws-cdk-lib/aws-lambda";
-import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
-import * as path from "path";
 import {
   AuthorizationType as AppSyncAuthType,
   FieldLogLevel,
@@ -11,16 +6,17 @@ import {
   Schema,
   UserPoolDefaultAction,
 } from "@aws-cdk/aws-appsync-alpha";
-import { ICertificate } from "aws-cdk-lib/aws-certificatemanager";
-import { IUserPool, OAuthScope, UserPool } from "aws-cdk-lib/aws-cognito";
+import { Duration, RemovalPolicy, Stack, StackProps } from "aws-cdk-lib";
+import { UserPool } from "aws-cdk-lib/aws-cognito";
+import { SubnetType, Vpc } from "aws-cdk-lib/aws-ec2";
 import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import {
-  ServerlessCluster,
-  DatabaseSecret,
   DatabaseClusterEngine,
+  DatabaseSecret,
+  ServerlessCluster,
 } from "aws-cdk-lib/aws-rds";
 import { Construct } from "constructs";
-import { SecurityGroup, SubnetType, Vpc } from "aws-cdk-lib/aws-ec2";
+import * as path from "path";
 
 const rdsResponseTemplate = `
   ## Raise a GraphQL field error in case of a datasource invocation error
@@ -96,26 +92,17 @@ export class FirstStack extends Stack {
     noneDS.createResolver({
       typeName: "Query",
       fieldName: "getIcpParameters",
-      requestMappingTemplate: MappingTemplate.fromString("{}"),
+      requestMappingTemplate: MappingTemplate.fromString(`
+        {
+          "version": "2018-05-29"
+        }
+      `),
       responseMappingTemplate: MappingTemplate.fromString("{}"),
     });
 
     rdsDS.createResolver({
       typeName: "IcpParameters",
       fieldName: "industries",
-      requestMappingTemplate: MappingTemplate.fromString(`
-        {
-          "version": "2018-05-29",
-          "statements": [ "SELECT id, description FROM searchable_industry WHERE parent_industry_id IS NULL" ],
-          "variableMap": {}
-        }
-      `),
-      responseMappingTemplate: MappingTemplate.fromString(rdsResponseTemplate),
-    });
-
-    rdsDS.createResolver({
-      typeName: "Query",
-      fieldName: "getIndustries",
       requestMappingTemplate: MappingTemplate.fromString(`
         {
           "version": "2018-05-29",

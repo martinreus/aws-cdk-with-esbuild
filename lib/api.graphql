@@ -1,6 +1,5 @@
 type Query {
   getIcpParameters: IcpParameters
-  getIndustries: [ICPIndustry!]
 }
 
 # type Mutation {
@@ -10,10 +9,6 @@ schema {
   query: Query
   # mutation: Mutation
 }
-
-# type Teste {
-#   id: ID!
-# }
 
 type IcpParameters {
   industries: [ICPIndustry!]
