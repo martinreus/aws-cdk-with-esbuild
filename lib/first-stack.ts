@@ -112,5 +112,33 @@ export class FirstStack extends Stack {
       `),
       responseMappingTemplate: MappingTemplate.fromString(rdsResponseTemplate),
     });
+
+    rdsDS.createResolver({
+      typeName: "Query",
+      fieldName: "getIndustries",
+      requestMappingTemplate: MappingTemplate.fromString(`
+        {
+          "version": "2018-05-29",
+          "statements": [ "SELECT id, description FROM searchable_industry WHERE parent_industry_id IS NULL" ],
+          "variableMap": {}
+        }
+      `),
+      responseMappingTemplate: MappingTemplate.fromString(rdsResponseTemplate),
+    });
+
+    rdsDS.createResolver({
+      typeName: "ICPIndustry",
+      fieldName: "industries",
+      requestMappingTemplate: MappingTemplate.fromString(`
+        {
+          "version": "2018-05-29",
+          "statements": [ "SELECT id, description FROM searchable_industry WHERE parent_industry_id = :parentId" ],
+          "variableMap": {
+            ":parentId": $util.toJson($context.source.id)
+          }
+        }
+      `),
+      responseMappingTemplate: MappingTemplate.fromString(rdsResponseTemplate),
+    });
   }
 }
