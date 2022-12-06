@@ -59,7 +59,9 @@ export class FirstStack extends Stack {
       (child) => child instanceof DatabaseSecret
     )[0] as DatabaseSecret;
 
-    const userPool = new UserPool(this, "firstUserPool");
+    const userPool = new UserPool(this, "firstUserPool", {
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
     userPool.addClient("first-app-client");
 
     const graphqlApi = new GraphqlApi(this, "firstGraphqlApi", {
@@ -100,19 +102,17 @@ export class FirstStack extends Stack {
       responseMappingTemplate: MappingTemplate.fromString("{}"),
     });
 
+    // top hierarchy industries (with narrow search if wanted)
     rdsDS.createResolver({
       typeName: "IcpParameters",
       fieldName: "industries",
-      requestMappingTemplate: MappingTemplate.fromString(`
-        {
-          "version": "2018-05-29",
-          "statements": [ "SELECT id, description FROM searchable_industry WHERE parent_industry_id IS NULL" ],
-          "variableMap": {}
-        }
-      `),
+      requestMappingTemplate: MappingTemplate.fromFile(
+        path.join(__dirname, "getIcpParameters.industries.vtl")
+      ),
       responseMappingTemplate: MappingTemplate.fromString(rdsResponseTemplate),
     });
 
+    // resolver for nested industries
     rdsDS.createResolver({
       typeName: "ICPIndustry",
       fieldName: "industries",

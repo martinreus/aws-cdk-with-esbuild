@@ -10,5 +10,9 @@ create table if not exists searchable_industry (
 
 
 insert into searchable_industry (id, description) values (uuid(), 'Machine manufacturing');
-insert into searchable_industry (id, description, parent_industry_id) values (uuid(), 'CNC machine manufacturing', '452e6801-7286-11ed-a596-0ad12c683ea0');
-insert into searchable_industry (id, description) values (uuid(), 'Programming services');
+insert into searchable_industry (id, description, parent_industry_id) (select uuid(), 'CNC machine manufacturing', id from searchable_industry where description = 'Machine manufacturing');insert into searchable_industry (id, description) values (uuid(), 'Programming services');
+insert into searchable_industry (id, description) (select id, 'App development' from searchable_industry where description = 'Programming services');
+insert into searchable_industry (id, description, parent_industry_id) (select uuid(), 'App development', id from searchable_industry where description = 'Programming services');
+
+
+

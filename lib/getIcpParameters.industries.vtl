@@ -1,0 +1,14 @@
+#set($description = $context.arguments.get("description"))
+#set($selectClause = "parent_industry_id IS NULL")
+#set($varMap = {})
+
+#if( "$!description" != "" ) 
+    #set($selectClause = "description like :descriptionLike")
+    $util.qr($varMap.put(":descriptionLike", "%${description}%"))
+#end
+
+{
+  "version": "2018-05-29",
+  "statements": [ "SELECT id, description FROM searchable_industry WHERE ${selectClause}" ],
+  "variableMap": $util.toJson($varMap)
+}

@@ -11,7 +11,7 @@ schema {
 }
 
 type IcpParameters {
-  industries: [ICPIndustry!]
+  industries(description: String): [ICPIndustry!]
 }
 
 type ICPIndustry {
