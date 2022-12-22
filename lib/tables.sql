@@ -16,3 +16,5 @@ insert into searchable_industry (id, description, parent_industry_id) (select uu
 
 
 
+
+

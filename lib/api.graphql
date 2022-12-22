@@ -1,5 +1,6 @@
 type Query {
   getIcpParameters: IcpParameters
+  getIndustriesWithParent(description: String): [ICPIndustryWithParent!]
 }
 
 # type Mutation {
@@ -19,4 +20,11 @@ type ICPIndustry {
   description: String!
   # child industries
   industries: [ICPIndustry!]
+}
+
+type ICPIndustryWithParent {
+  id: ID!
+  description: String
+  parent_industry_id: ID
+  parent_industry: ICPIndustryWithParent
 }

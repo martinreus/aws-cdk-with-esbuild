@@ -27,6 +27,20 @@ const rdsResponseTemplate = `
   $utils.toJson($utils.rds.toJsonObject($ctx.result)[0])
 `;
 
+const singleRdsResponseTemplate = `
+  ## Raise a GraphQL field error in case of a datasource invocation error
+  #if($ctx.error)
+      $utils.error($ctx.error.message, $ctx.error.type)
+  #end
+
+  #set($result = $utils.rds.toJsonObject($ctx.result)[0])
+  #if($result.isEmpty()) 
+    null
+  #else 
+    $util.toJson($result[0])
+  #end
+`;
+
 export class FirstStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
@@ -100,6 +114,27 @@ export class FirstStack extends Stack {
         }
       `),
       responseMappingTemplate: MappingTemplate.fromString("{}"),
+    });
+
+    // industries with parent (this is backwards)
+    rdsDS.createResolver({
+      typeName: "Query",
+      fieldName: "getIndustriesWithParent",
+      requestMappingTemplate: MappingTemplate.fromFile(
+        path.join(__dirname, "getIndustriesWithParent.vtl")
+      ),
+      responseMappingTemplate: MappingTemplate.fromString(rdsResponseTemplate),
+    });
+
+    rdsDS.createResolver({
+      typeName: "ICPIndustryWithParent",
+      fieldName: "parent_industry",
+      requestMappingTemplate: MappingTemplate.fromFile(
+        path.join(__dirname, "ICPIndustryWithParent.parent_industry.vtl")
+      ),
+      responseMappingTemplate: MappingTemplate.fromString(
+        singleRdsResponseTemplate
+      ),
     });
 
     // top hierarchy industries (with narrow search if wanted)

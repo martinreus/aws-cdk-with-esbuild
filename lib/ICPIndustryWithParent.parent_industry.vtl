@@ -1,0 +1,7 @@
+{
+  "version": "2018-05-29",
+  "statements": [ "SELECT * FROM searchable_industry WHERE id = :parentIndustry" ],
+  "variableMap": {
+    ":parentIndustry": $util.toJson($ctx.source.parent_industry_id)
+  }
+}
