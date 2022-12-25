@@ -21,5 +21,6 @@ new FirstStack(app, "FirstStack", {
   env: {
     region: "eu-central-1",
     account: "960760976236",
+    // account: "079846079413",
   },
 });
