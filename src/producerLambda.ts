@@ -17,8 +17,13 @@ export const handler = async (params: Params, ctx: any) => {
       .sendMessage({
         MessageBody: JSON.stringify({
           iterationId: i,
-          time: Date.now(),
         }),
+        MessageAttributes: {
+          originalSendTime: {
+            StringValue: `${new Date().toISOString()}`,
+            DataType: "String",
+          },
+        },
         QueueUrl: downstreamServiceQueue!,
       })
       .promise();

@@ -1,1 +1,1 @@
-import {} from "../../src/queueingLambda";
+import {} from "../../lib/constructs/rateLimiter/queueingLambda";

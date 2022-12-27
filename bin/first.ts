@@ -20,7 +20,7 @@ new FirstStack(app, "FirstStack", {
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
   env: {
     region: "eu-central-1",
-    account: "960760976236",
-    // account: "079846079413",
+    // account: "960760976236",
+    account: "079846079413",
   },
 });
