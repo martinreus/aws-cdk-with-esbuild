@@ -7,29 +7,17 @@ export interface Params {
   randomMaxWait?: number;
 }
 
-const downstreamServiceQueue = process.env.serviceQueue;
+export interface Item {
+  id: string;
+  uuid: string;
+  timestamp?: string;
+}
 
-const client = new SQS({ apiVersion: "2012-11-05" });
-
-export const handler = async (params: Params, ctx: any) => {
-  for (let i = 0; i < params.iterations; i++) {
-    await client
-      .sendMessage({
-        MessageBody: JSON.stringify({
-          iterationId: i,
-        }),
-        MessageAttributes: {
-          originalSendTime: {
-            StringValue: `${new Date().toISOString()}`,
-            DataType: "String",
-          },
-        },
-        QueueUrl: downstreamServiceQueue!,
-      })
-      .promise();
-
-    if (params.randomMaxWait) {
-      await sleep(Math.random() * params.randomMaxWait);
-    }
+export const handler = async (params: Params, ctx: any): Promise<Item[]> => {
+  let producedItems: Item[] = [];
+  for (let id = 0; id < params.iterations; id++) {
+    producedItems.push({ id: `${id}`, uuid: v4().toString() });
   }
+
+  return producedItems;
 };

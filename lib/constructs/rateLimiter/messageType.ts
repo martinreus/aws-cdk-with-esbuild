@@ -1,8 +1,10 @@
+import { MessageBodyAttributeMap } from "aws-sdk/clients/sqs";
+
 export interface MessageRecords {
   Records: RecordContent[];
 }
 
-interface MessageAttribute {
+export interface MessageAttribute {
   stringValue?: string;
   binaryValue?: string;
   stringListValues?: any[];
@@ -20,4 +22,27 @@ export interface RecordContent {
   eventSource: string;
   eventSourceARN: string;
   awsRegion: string;
+}
+
+export interface RateLimiterPayload<Payload, Context> {
+  payload: Payload;
+  context: Context;
+}
+
+export function toSqsMessageAttributes(messageAttributes?: {
+  [key: string]: MessageAttribute;
+}): MessageBodyAttributeMap | undefined {
+  if (!messageAttributes || Object.keys(messageAttributes).length == 0) {
+    return;
+  }
+
+  return Object.keys(messageAttributes)
+    .map((messageAttrKey) => ({
+      [messageAttrKey]: {
+        DataType: messageAttributes[messageAttrKey].dataType,
+        StringValue: messageAttributes[messageAttrKey]?.stringValue,
+        BinaryValue: messageAttributes[messageAttrKey]?.binaryValue,
+      },
+    }))
+    .reduce((prev, curr) => ({ ...prev, ...curr }));
 }
